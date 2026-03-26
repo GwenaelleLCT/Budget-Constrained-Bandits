@@ -1,0 +1,159 @@
+'''
+Created on 23 mars 2024
+
+@author: aletard
+'''
+
+#--------------------------------------------------------------------#
+#                                                                    #
+#                          external imports                          #
+#                                                                    #
+#--------------------------------------------------------------------#
+
+import random
+import numpy as np
+
+
+#--------------------------------------------------------------------#
+#                                                                    #
+#                          Packages import                           #
+#                                                                    #
+#--------------------------------------------------------------------#
+
+
+
+
+#--------------------------------------------------------------------#
+#                                                                    #
+#                          Global Variables                          #
+#                                                                    #
+#--------------------------------------------------------------------#
+
+
+#--------------------------------------------------------------------#
+#                                                                    #
+#                         Functions & Objects                        #
+#                                                                    #
+#--------------------------------------------------------------------#
+
+
+
+class BudgetedThompson():
+
+    def __init__(self, arms=None): 
+        
+        self.ground_arms = arms
+        self.arms_pool = self.ground_arms.copy()
+        self.name = "Budgeted Thompson"
+        self.budget = 5
+
+        self.arms_payoff_vectors = {"successes" : np.zeros(len(self.ground_arms)),
+                                    "losses" : np.zeros(len(self.ground_arms)),
+                                    "cost" : self.ground_arms["cost"].values
+                                    }
+        
+        self.arm_chosen = None
+        # threshold used to compute rewards, actual feedback is compared to it
+        # Follow the simulator metric, but this can be changed.
+        self.threshold = 4
+        
+        
+        # -------------------------------------------------------------------
+
+    def run(self, observed_value, user_context=None):
+
+        self.init_choice(observed_value)
+        self.arm_chosen = self.choose_action()
+        
+        return self.arm_chosen
+
+        # -------------------------------------------------------------------
+
+    def init_choice(self, observation):
+
+        self.arm_chosen = -1
+        # Ensuring algorithm only arms for which feedback have been provided by current user
+        self.arms_pool = self.ground_arms[self.ground_arms["arm_id"].isin(observation["arm_id"])]
+        self.arms_pool.reset_index(inplace=True)
+        
+        # -------------------------------------------------------------------
+
+    def choose_action(self):
+
+        all_thetas = np.random.beta(self.arms_payoff_vectors["successes"] + 1, self.arms_payoff_vectors["losses"] + 1)
+
+        rentability_score = all_thetas / self.arms_payoff_vectors["cost"]
+
+        sorted_rentability_score_list = np.argsort(rentability_score)[::-1]
+
+        budget_restant = self.budget
+
+        profitability_threshold = 0
+
+        for ids in sorted_rentability_score_list :
+            arm_cost = self.arms_payoff_vectors["cost"][ids]
+            
+
+            if budget_restant - arm_cost >= 0 :
+                budget_restant -= arm_cost
+            else : 
+                profitability_threshold = rentability_score[ids]
+                break
+                
+        all_probabilities = np.zeros(len(self.arms_pool['arm_id']))
+
+        for i, arm in enumerate(self.arms_pool['arm_id']):
+            arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm][0]
+            arm_rentability_score = rentability_score[arm_pos]
+            arm_cost = self.arms_payoff_vectors["cost"][arm_pos]
+
+            if arm_rentability_score > profitability_threshold :
+                all_probabilities[i] = 1
+
+            elif arm_rentability_score ==profitability_threshold :
+                all_probabilities[i] = budget_restant / arm_cost
+            else :
+                all_probabilities[i] = 0
+
+        chosen_arms = []
+
+        for i, arm in enumerate(self.arms_pool['arm_id']):
+            if np.random.uniform() < all_probabilities[i]:
+                chosen_arms.append(arm)
+
+        self.arm_chosen = chosen_arms
+
+        return chosen_arms
+
+        # -------------------------------------------------------------------
+
+    def evaluate(self, observation):
+
+        rewards = {}
+        for arm_id in self.arm_chosen:
+            feedback_rows = observation["feedback"][observation["arm_id"] == arm_id]
+            if len(feedback_rows) > 0:
+                feedback = feedback_rows.iloc[0]
+                reward = 1 if feedback >= self.threshold else 0
+                rewards[arm_id] = reward
+        return rewards
+
+
+        # -------------------------------------------------------------------
+
+    def update(self, observation):
+
+        rewards = self.evaluate(observation)
+        
+        for arm_id, reward in rewards.items():
+
+            arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm_id][0]
+            if reward > 0:
+                self.arms_payoff_vectors["successes"][arm_pos] += 1
+            else:
+                self.arms_payoff_vectors["losses"][arm_pos] += 1
+                  
+        
+        # -------------------------------------------------------------------
+
+    # =======================================================================
