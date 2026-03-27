@@ -32,3 +32,5 @@ Ce projet propose un simulateur permettant de comparer différentes variantes de
 ## Réglage des paramètres
 
 ## Run
+
+## Evaluation et metriques
