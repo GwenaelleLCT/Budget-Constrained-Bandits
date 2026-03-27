@@ -121,12 +121,12 @@ class ResultStorer():
                                                  
     #-----------------------------------------------------------------------------------------
 
-    def update_rentability(self, iteration, price, rewards): 
+    def update_cpc(self, iteration, price, rewards): 
         if rewards == 0:
-            current_rent = 0.0 
+            current_cpc = 0.0 
         else:
-            current_rent = price / rewards  
-        self.algorithm_performance["rentability"][iteration] = current_rent
+            current_cpc = price / rewards  
+        self.algorithm_performance["cpc"][iteration] = current_cpc
      
 
 

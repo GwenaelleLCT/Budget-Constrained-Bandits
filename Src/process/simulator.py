@@ -72,13 +72,13 @@ class Simulator():
         self.algorithm = TS(self.datas["arms"], self.datas["contexts"]) 
 
         
-        self.horizon = 30000
+        self.horizon = 15000
         self.results = ResultStorer(self.horizon)
         self.reporter = ReportGenerator(RM.create_repository_with_timestamp("../Output"), \
                                         (self.dataset_name, self.horizon, self.algorithm.name))
         
         # 1st parameter for time in seconds, 2nd for number of iterations
-        self.life_sign_delay = (300, 5000)
+        self.life_sign_delay = (300, 1000)
         
         
         #-----------------------
@@ -109,7 +109,7 @@ class Simulator():
         self.results.end_time = time.time()
 
         self.reporter.save_accuracy_plot(np.arange(self.horizon), self.results.algorithm_performance["accuracy"], "graphique__accuracy.png")
-        self.reporter.save_rentability_plot(np.arange(self.horizon), self.results.algorithm_performance["rentability"], "graphique__rentability.png")
+        self.reporter.save_cpc_plot(np.arange(self.horizon), self.results.algorithm_performance["cpc"], "graphique__cpc.png")
         
         self.end_sign()
 
@@ -145,16 +145,16 @@ class Simulator():
 
     def sign_life(self, iteration):
         if self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum() == 0:
-            current_rentability = 0.0 
+            cpc = 0.0 
         else:
-            current_rentability = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
+            cpc = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
 
         sign_life_message = f"\nSimulator has been running for {round(time.time() - self.results.start_time, 3)} seconds. \n" + \
                                f"Currently going for iteration {iteration}, latest accuracy value : {round(self.results.algorithm_performance['accuracy'][iteration],3)}," + \
                                f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][iteration],3)}.\n" + \
                                 f"cumulated price : {self.algorithm.price:.2f}. \n" + \
                                 f"cumulated rewards : {self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum():.2f}.\n" + \
-                                f"current rentability : {current_rentability:.3f}.\n\n"
+                                f"cpc : {cpc:.3f}.\n\n"
 
         self.reporter.log_generator(sign_life_message)
         
@@ -162,16 +162,16 @@ class Simulator():
         
     def end_sign(self):
         if self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum() == 0:
-            current_rentability = 0.0 
+            cpc = 0.0 
         else:
-            current_rentability = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
+            cpc = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
 
         end_message = f"\nSimulation correctly ended. \n The simulation has been running for {round(self.results.end_time - self.results.start_time, 3)} seconds. \n" + \
                         f"The simulation included {self.horizon} iterations, latest accuracy value : {round(self.results.algorithm_performance['accuracy'][self.horizon-1],3)}," + \
                         f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][self.horizon-1],3)}.\n" + \
                         f"cumulated price : {self.algorithm.price:.2f} \n" + \
                         f"cumulated rewards : {self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum():.2f}\n" + \
-                        f"final rentability : {round(current_rentability, 3)}\n\n"
+                        f"cpc : {round(cpc, 3)}\n\n"
 
         self.reporter.log_generator(end_message)
         

@@ -120,11 +120,8 @@ class ReportGenerator():
         # -------------------------------------------------------------------
 
     def save_accuracy_plot(self, iterations, accuracy, filename="accuracy.png"):
-
-        x_iterations = range(15000)
-        y_accuracy = accuracy[:15000]
         plt.figure(figsize=(10, 6))
-        plt.plot(x_iterations, y_accuracy, color='darkgreen', linestyle='-', 
+        plt.plot(iterations, accuracy, color='darkgreen', linestyle='-', 
              linewidth=1.5, marker='.', markersize=2)        
         plt.xlabel("Nombre d'itérations")
         plt.ylabel("Accuracy")
@@ -139,15 +136,13 @@ class ReportGenerator():
 
         # -------------------------------------------------------------------
 
-    def save_rentability_plot(self, iterations, rentability, filename="rentability.png"):
-        x_iterations = range(15000)
-        y_rentability = rentability[:15000]
+    def save_cpc_plot(self, iterations, cpc, filename="cpc.png"):
         plt.figure(figsize=(10, 6))
-        plt.plot(x_iterations, y_rentability, color='darkgreen', linestyle='-', 
+        plt.plot(iterations, cpc, color='darkgreen', linestyle='-', 
              linewidth=1.5, marker='.', markersize=2) 
         plt.xlabel("Nombre d'itérations")
-        plt.ylabel("Rentabilité")
-        plt.title("Évolution des itérations par rapport à la Rentabilité")
+        plt.ylabel("CPC")
+        plt.title("Évolution des itérations par rapport au CPC")
         
         plt.grid(True, which='both', linestyle=':', alpha=0.6)
         
