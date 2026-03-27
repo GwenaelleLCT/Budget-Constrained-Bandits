@@ -30,8 +30,10 @@ from Src.process.simulator import Simulator
 
 def main() : 
 
-    simulator = Simulator()
-    simulator.run_simulation()
+    for i in range(10):
+        print(f"Starting simulation n°{i+1}...\n")
+        simulator = Simulator()
+        simulator.run_simulation()
     
 #--------------------------------------------------
 
