@@ -38,13 +38,13 @@ import numpy as np
 
 
 
-class BudgetedThompson():
+class TSbudget():
 
     def __init__(self, arms=None): 
         
         self.ground_arms = arms
         self.arms_pool = self.ground_arms.copy()
-        self.name = "Budgeted Thompson"
+        self.name = "TSBudget"
         self.budget = 5
 
         self.arms_payoff_vectors = {"successes" : np.zeros(len(self.ground_arms)),
