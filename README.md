@@ -38,7 +38,7 @@ Ce projet propose un simulateur permettant de comparer différentes variantes de
 ├── main.py                 # Point d'entrée principal du programme
 └── requirements.txt        # Liste des dépendances Python
 
-## 🛠️ Réglage des paramètres importants
+## Réglage des paramètres importants
 
 Les paramètres principaux de la simulation et des algorithmes se configurent dans leurs fichiers respectifs.
 
