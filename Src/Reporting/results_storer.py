@@ -63,7 +63,7 @@ class ResultStorer():
                                      "correctness" : np.zeros(horizon),
                                      "accuracy" : np.zeros(horizon),
                                      "cumulated_regrets" : np.zeros(horizon),
-                                     "rentability" : np.zeros(horizon)
+                                     "cpc" : np.zeros(horizon)
                                      }
             
 
@@ -74,7 +74,7 @@ class ResultStorer():
         self.update_correctness(iteration, observed_value)
         self.update_accuracy(iteration)
         self.update_regrets(iteration)
-        self.update_rentability(iteration, price, rewards)
+        self.update_cpc(iteration, price, rewards)
         
         #-----------------------
 

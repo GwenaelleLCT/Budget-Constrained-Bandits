@@ -125,7 +125,7 @@ class ReportGenerator():
              linewidth=1.5, marker='.', markersize=2)        
         plt.xlabel("Nombre d'itérations")
         plt.ylabel("Accuracy")
-        plt.title("Évolution des itérations par rapport à l'Accuracy")
+        plt.title("Évolution de l'accuracy")
 
         plt.grid(True, which='both', linestyle=':', alpha=0.6)
         
@@ -142,7 +142,7 @@ class ReportGenerator():
              linewidth=1.5, marker='.', markersize=2) 
         plt.xlabel("Nombre d'itérations")
         plt.ylabel("CPC")
-        plt.title("Évolution des itérations par rapport au CPC")
+        plt.title("Évolution du CPC")
         
         plt.grid(True, which='both', linestyle=':', alpha=0.6)
         
