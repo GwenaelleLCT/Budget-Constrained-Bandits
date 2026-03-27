@@ -20,18 +20,21 @@ import numpy as np
 
 class TS():
 
-    def __init__(self, arms=None): 
+    def __init__(self, arms=None, context_example=None): 
         
         self.ground_arms = arms
         self.arms_pool = self.ground_arms.copy()
         self.name = "TS"
 
         self.arms_payoff_vectors = {"cumulated_rewards" : np.zeros(len(self.ground_arms)),
-                                    "tries" : np.zeros(len(self.ground_arms))
+                                    "tries" : np.zeros(len(self.ground_arms)),
+                                    "cost" : self.ground_arms["cost"].values
                                     }
         
         self.arm_chosen = None
         self.threshold = 4
+
+        self.price=0
         
         # -------------------------------------------------------------------
 
@@ -93,10 +96,11 @@ class TS():
         observed_reward = self.evaluate(observation)
         
         arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == self.arm_chosen][0]
-        
-        # Mise à jour des statistiques de base
+
         self.arms_payoff_vectors["cumulated_rewards"][arm_pos] += observed_reward
         self.arms_payoff_vectors["tries"][arm_pos] += 1
+
+        self.price += self.arms_payoff_vectors["cost"][arm_pos]
                   
         
         # -------------------------------------------------------------------

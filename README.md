@@ -28,9 +28,45 @@ Ce projet propose un simulateur permettant de comparer différentes variantes de
         pip install -r requirements.txt
 
 ## Structure du projet
+- Output : stockages des resultats (un dossier créer par run)
+- Resources : dataset
+- Src:
+        - Algorithms
+                - CTS.py (contextual thompson sampling)
+                -...
+        - data_management
+                -dataloader.py
+        - process
+        - Reporting
+- main.py
+- requierements.txt
 
-## Réglage des paramètres
+## Réglage des paramètres importants
+simulator.py:
+ self.dataset_name pour choisir le nom du dataset
+ self.algorithm pour chosir l'algorithm
+ self.horizon pour chosir le nombre d'itération
+
+TS.py:
+self.threshold
+
+CTS.py:
+self.v
+self.threshold
+
+TSBudget.py:
+self.budget
+self.threshold
+
+CTSBudget.py:
+self.v
+self.budget
+self.threshold
+... 
 
 ## Run
 
-## Evaluation et metriques
+   ```bash
+        python main.py
+        
+        

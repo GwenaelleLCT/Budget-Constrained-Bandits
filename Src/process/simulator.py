@@ -28,16 +28,10 @@ from Src.data_management.data_loader import DataLoader as DL
 from Src.Reporting.report_generator import ReportGenerator
 from Src.Reporting.results_storer import ResultStorer
 
-from Src.algorithms.EGreedy import EGreedy
-from Src.algorithms.Random import Random
-from Src.algorithms.UCB1 import UCB1
-from Src.algorithms.LinUCB1 import LinUCB1
 from Src.algorithms.CTS import CTS
-from Src.algorithms.ContextualGreedy import ContextualGreedy
 from Src.algorithms.TS import TS
-from Src.algorithms.ContextualGreedy2 import ContextualGreedy2
-from Src.algorithms.CTS2 import CTS2
-from Src.algorithms.LinUCB12 import LinUCB12
+from Src.algorithms.TSBudget import TSBudget
+from Src.algorithms.CTSBudget import CTSBudget
 
 
 
@@ -73,13 +67,9 @@ class Simulator():
         
         print("Initializing Simulator")
         
-        
-        # datas is a dictionnary of dataframe
-        self.dataset_name = "02-Mushrooms"
+        self.dataset_name = "03-RSASM-cost"
         self.datas = self.data_extraction()
-        # provided algorithms:  EGreedy, Random, UCB1, TS
-        # self.algorithm = EGreedy(self.datas["arms"]) 
-        self.algorithm = LinUCB12(self.datas["arms"], self.datas["contexts"].shape[1]-1) # providing the number of dimensions of the context to the algorithm, -1 because of the context_id column
+        self.algorithm = TS(self.datas["arms"], self.datas["contexts"]) 
 
         
         self.horizon = 30000
@@ -109,15 +99,18 @@ class Simulator():
             
             self.results.algorithm_performance["predicted_arms"][iteration] = self.algorithm.run(observed_value, user_context)
             self.algorithm.update(observed_value)
-            self.results.update_measures(iteration, observed_value)
+            self.results.update_measures(iteration, observed_value, self.algorithm.price, self.algorithm.arms_payoff_vectors["cumulated_rewards"].sum())
             
             
             if (time.time() - self.results.start_time == self.life_sign_delay[0]) | \
                 (iteration % self.life_sign_delay[1] == 0) :
-                self.sign_life(iteration)
-            
+                self.sign_life(iteration)          
             
         self.results.end_time = time.time()
+
+        self.reporter.save_accuracy_plot(np.arange(self.horizon), self.results.algorithm_performance["accuracy"], "graphique__accuracy.png")
+        self.reporter.save_rentability_plot(np.arange(self.horizon), self.results.algorithm_performance["rentability"], "graphique__rentability.png")
+        
         self.end_sign()
 
         #-----------------------
@@ -151,20 +144,34 @@ class Simulator():
         #-----------------------
 
     def sign_life(self, iteration):
+        if self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum() == 0:
+            current_rentability = 0.0 
+        else:
+            current_rentability = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
 
         sign_life_message = f"\nSimulator has been running for {round(time.time() - self.results.start_time, 3)} seconds. \n" + \
                                f"Currently going for iteration {iteration}, latest accuracy value : {round(self.results.algorithm_performance['accuracy'][iteration],3)}," + \
-                               f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][iteration],3)}.\n\n"
+                               f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][iteration],3)}.\n" + \
+                                f"cumulated price : {self.algorithm.price:.2f}. \n" + \
+                                f"cumulated rewards : {self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum():.2f}.\n" + \
+                                f"current rentability : {current_rentability:.3f}.\n\n"
 
         self.reporter.log_generator(sign_life_message)
         
         #-----------------------
         
     def end_sign(self):
+        if self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum() == 0:
+            current_rentability = 0.0 
+        else:
+            current_rentability = self.algorithm.price / self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum()
 
         end_message = f"\nSimulation correctly ended. \n The simulation has been running for {round(self.results.end_time - self.results.start_time, 3)} seconds. \n" + \
                         f"The simulation included {self.horizon} iterations, latest accuracy value : {round(self.results.algorithm_performance['accuracy'][self.horizon-1],3)}," + \
-                        f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][self.horizon-1],3)}.\n\n"
+                        f" cumulated regrets: {round(self.results.algorithm_performance['cumulated_regrets'][self.horizon-1],3)}.\n" + \
+                        f"cumulated price : {self.algorithm.price:.2f} \n" + \
+                        f"cumulated rewards : {self.algorithm.arms_payoff_vectors['cumulated_rewards'].sum():.2f}\n" + \
+                        f"final rentability : {round(current_rentability, 3)}\n\n"
 
         self.reporter.log_generator(end_message)
         

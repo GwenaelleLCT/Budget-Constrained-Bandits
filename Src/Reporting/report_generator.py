@@ -11,6 +11,8 @@ Created on 18 juil. 2023
 #----------------------------------------------------------------#
 
 import sys
+import matplotlib.pyplot as plt
+import os
 
 
 #----------------------------------------------------------------#
@@ -114,5 +116,44 @@ class ReportGenerator():
                 print(message)
                 # Go back to original outpout
                 sys.stdout = sys.__stdout__
+
+        # -------------------------------------------------------------------
+
+    def save_accuracy_plot(self, iterations, accuracy, filename="accuracy.png"):
+
+        x_iterations = range(15000)
+        y_accuracy = accuracy[:15000]
+        plt.figure(figsize=(10, 6))
+        plt.plot(x_iterations, y_accuracy, color='darkgreen', linestyle='-', 
+             linewidth=1.5, marker='.', markersize=2)        
+        plt.xlabel("Nombre d'itérations")
+        plt.ylabel("Accuracy")
+        plt.title("Évolution des itérations par rapport à l'Accuracy")
+
+        plt.grid(True, which='both', linestyle=':', alpha=0.6)
+        
+        save_path = os.path.join(self.results_path, filename)
+        
+        plt.savefig(save_path)
+        plt.close()
+
+        # -------------------------------------------------------------------
+
+    def save_rentability_plot(self, iterations, rentability, filename="rentability.png"):
+        x_iterations = range(15000)
+        y_rentability = rentability[:15000]
+        plt.figure(figsize=(10, 6))
+        plt.plot(x_iterations, y_rentability, color='darkgreen', linestyle='-', 
+             linewidth=1.5, marker='.', markersize=2) 
+        plt.xlabel("Nombre d'itérations")
+        plt.ylabel("Rentabilité")
+        plt.title("Évolution des itérations par rapport à la Rentabilité")
+        
+        plt.grid(True, which='both', linestyle=':', alpha=0.6)
+        
+        save_path = os.path.join(self.results_path, filename)
+        
+        plt.savefig(save_path)
+        plt.close()
 
         # -------------------------------------------------------------------

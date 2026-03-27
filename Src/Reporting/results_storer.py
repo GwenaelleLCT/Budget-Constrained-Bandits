@@ -59,33 +59,49 @@ class ResultStorer():
         self.simulation_duration = None
         
         self.threshold = 4
-        self.algorithm_performance ={"predicted_arms" : np.zeros(horizon),
+        self.algorithm_performance ={"predicted_arms": np.empty(horizon, dtype=object),
                                      "correctness" : np.zeros(horizon),
                                      "accuracy" : np.zeros(horizon),
-                                     "cumulated_regrets" : np.zeros(horizon)
+                                     "cumulated_regrets" : np.zeros(horizon),
+                                     "rentability" : np.zeros(horizon)
                                      }
             
 
         #-----------------------
 
-    def update_measures(self, iteration, observed_value):
+    def update_measures(self, iteration, observed_value, price=0, rewards=0):
 
         self.update_correctness(iteration, observed_value)
         self.update_accuracy(iteration)
         self.update_regrets(iteration)
+        self.update_rentability(iteration, price, rewards)
         
         #-----------------------
 
     def update_correctness(self, iteration, observed_value):
-        
-        feedback = observed_value["feedback"][observed_value["arm_id"] \
-                                      == self.algorithm_performance["predicted_arms"][iteration]].iloc[0]
-        
-        if feedback >= self.threshold:
-            self.algorithm_performance["correctness"][iteration] = 1
-        
-        
-        #-----------------------
+            
+            chosen_arms = self.algorithm_performance["predicted_arms"][iteration]
+            
+            # Si aucun bras n'a été choisi
+            if chosen_arms is None or (isinstance(chosen_arms, list) and len(chosen_arms) == 0):
+                self.algorithm_performance["correctness"][iteration] = 0
+                return
+                
+            if not isinstance(chosen_arms, list):
+                chosen_arms = [chosen_arms]
+                
+            good_arms_count = 0
+             
+            for arm in chosen_arms:
+                feedback_rows = observed_value["feedback"][observed_value["arm_id"] == arm]
+                
+                if len(feedback_rows) > 0:
+                    feedback = feedback_rows.iloc[0]
+                    if feedback >= self.threshold:
+                        good_arms_count += 1
+                        
+            self.algorithm_performance["correctness"][iteration] = good_arms_count / len(chosen_arms)
+            #-----------------------
         
     def update_accuracy(self, iteration):
         self.algorithm_performance["accuracy"][iteration] = \
@@ -103,7 +119,14 @@ class ResultStorer():
                 self.algorithm_performance["cumulated_regrets"][iteration-1] + (1 - self.algorithm_performance["correctness"][iteration])
                              
                                                  
-    #----------------------------------------------------------------------------------------- 
+    #-----------------------------------------------------------------------------------------
+
+    def update_rentability(self, iteration, price, rewards): 
+        if rewards == 0:
+            current_rent = 0.0 
+        else:
+            current_rent = price / rewards  
+        self.algorithm_performance["rentability"][iteration] = current_rent
      
 
 

@@ -18,13 +18,14 @@ import numpy as np
 #--------------------------------------------------------------------#
 
 
-class CTS():
+class CTSBudget():
 
     def __init__(self, arms=None, context_example=None): 
         
         self.ground_arms = arms
         self.arms_pool = self.ground_arms.copy()
-        self.name = "CTS"
+        self.name = "CTSBudget"
+        self.budget = 5
 
         nb_arms = len(self.ground_arms)
         nb_dimensions = context_example.shape[1] - 1
@@ -44,9 +45,7 @@ class CTS():
         self.arm_chosen = None
         # Paramètre de variance
         self.v = 0.5
-
         self.threshold = 4
-
         self.price=0
 
         
@@ -88,37 +87,77 @@ class CTS():
             
             i += 1
             
-        arm_chosen_index = np.argmax(expected_payoff) 
-        arm_chosen = self.arms_pool["arm_id"][arm_chosen_index]
+        rentability_score = expected_payoff / self.arms_payoff_vectors["cost"]
+
+        sorted_rentability_score_list = np.argsort(rentability_score)[::-1]
+
+        budget_restant = self.budget
+
+        profitability_threshold = 0
+
+        for ids in sorted_rentability_score_list :
+            arm_cost = self.arms_payoff_vectors["cost"][ids]
             
-        return arm_chosen
+
+            if budget_restant - arm_cost >= 0 :
+                budget_restant -= arm_cost
+            else : 
+                profitability_threshold = rentability_score[ids]
+                break
+                
+        all_probabilities = np.zeros(len(self.arms_pool['arm_id']))
+
+        for i, arm in enumerate(self.arms_pool['arm_id']):
+            arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm][0]
+            arm_rentability_score = rentability_score[arm_pos]
+            arm_cost = self.arms_payoff_vectors["cost"][arm_pos]
+
+            if arm_rentability_score > profitability_threshold :
+                all_probabilities[i] = 1
+
+            elif arm_rentability_score ==profitability_threshold :
+                all_probabilities[i] = budget_restant / arm_cost
+            else :
+                all_probabilities[i] = 0
+
+        chosen_arms = []
+
+        for i, arm in enumerate(self.arms_pool['arm_id']):
+            if np.random.uniform() < all_probabilities[i]:
+                chosen_arms.append(arm)
+
+        self.arm_chosen = chosen_arms
+
+        return chosen_arms
 
         # -------------------------------------------------------------------
 
     def evaluate(self, observation):
 
-        reward = 0
-        feedback = observation["feedback"][observation["arm_id"] == self.arm_chosen].iloc[0]
-        if feedback >= self.threshold:
-            reward = 1
-
-        return reward
+        rewards = {}
+        for arm_id in self.arm_chosen:
+            feedback_rows = observation["feedback"][observation["arm_id"] == arm_id]
+            if len(feedback_rows) > 0:
+                feedback = feedback_rows.iloc[0]
+                reward = 1 if feedback >= self.threshold else 0
+                rewards[arm_id] = reward
+        return rewards
 
         # -------------------------------------------------------------------
 
     def update(self, observation):
 
         observed_reward = self.evaluate(observation)
-        self.arms_payoff_vectors["cumulated_rewards"][self.arm_chosen] += observed_reward
-        self.arms_payoff_vectors["tries"][self.arm_chosen] += 1
-        
-        self.arms_payoff_vectors["covariance_matrix"][self.arm_chosen] += np.outer(self.current_context, self.current_context)
-        self.arms_payoff_vectors["inverse_covariance_matrix"][self.arm_chosen] = np.linalg.inv(self.arms_payoff_vectors["covariance_matrix"][self.arm_chosen])
-        self.arms_payoff_vectors["features_matrix"][self.arm_chosen] += observed_reward * self.current_context
+        for arm_id, reward in observed_reward.items():
+            arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm_id][0]
+            self.arms_payoff_vectors["cumulated_rewards"][arm_pos] += reward
+            self.arms_payoff_vectors["tries"][arm_pos] += 1
+            self.arms_payoff_vectors["covariance_matrix"][arm_pos] += np.outer(self.current_context, self.current_context)
+            self.arms_payoff_vectors["inverse_covariance_matrix"][arm_pos] = np.linalg.inv(self.arms_payoff_vectors["covariance_matrix"][arm_pos])
+            self.arms_payoff_vectors["features_matrix"][arm_pos] += reward * self.current_context
+            self.price += self.arms_payoff_vectors["cost"][arm_pos]
 
-        self.price += self.arms_payoff_vectors["cost"][self.arm_chosen]
-                  
-        
+
         # -------------------------------------------------------------------
 
     # =======================================================================

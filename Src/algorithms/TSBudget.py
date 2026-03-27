@@ -38,17 +38,17 @@ import numpy as np
 
 
 
-class TSbudget():
+class TSBudget():
 
-    def __init__(self, arms=None): 
+    def __init__(self, arms=None, context_example=None): 
         
         self.ground_arms = arms
         self.arms_pool = self.ground_arms.copy()
         self.name = "TSBudget"
         self.budget = 5
 
-        self.arms_payoff_vectors = {"successes" : np.zeros(len(self.ground_arms)),
-                                    "losses" : np.zeros(len(self.ground_arms)),
+        self.arms_payoff_vectors = {"cumulated_rewards" : np.zeros(len(self.ground_arms)),
+                                    "tries" : np.zeros(len(self.ground_arms)),
                                     "cost" : self.ground_arms["cost"].values
                                     }
         
@@ -56,7 +56,8 @@ class TSbudget():
         # threshold used to compute rewards, actual feedback is compared to it
         # Follow the simulator metric, but this can be changed.
         self.threshold = 4
-        
+        self.price=0
+
         
         # -------------------------------------------------------------------
 
@@ -80,9 +81,21 @@ class TSbudget():
 
     def choose_action(self):
 
-        all_thetas = np.random.beta(self.arms_payoff_vectors["successes"] + 1, self.arms_payoff_vectors["losses"] + 1)
+        arm_pool_size = len(self.arms_pool['arm_id']) 
+        sampled_values = np.zeros(arm_pool_size) 
+        
+        i = 0
+        for arm in self.arms_pool['arm_id']:
+            arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm][0] 
+            
+            S_i = self.arms_payoff_vectors["cumulated_rewards"][arm_pos] 
+            F_i = self.arms_payoff_vectors["tries"][arm_pos] - S_i 
+            
+            sampled_values[i] = np.random.beta(S_i + 1, F_i + 1)
+            
+            i += 1
 
-        rentability_score = all_thetas / self.arms_payoff_vectors["cost"]
+        rentability_score = sampled_values / self.arms_payoff_vectors["cost"]
 
         sorted_rentability_score_list = np.argsort(rentability_score)[::-1]
 
@@ -149,9 +162,11 @@ class TSbudget():
 
             arm_pos = self.ground_arms.index[self.ground_arms["arm_id"] == arm_id][0]
             if reward > 0:
-                self.arms_payoff_vectors["successes"][arm_pos] += 1
-            else:
-                self.arms_payoff_vectors["losses"][arm_pos] += 1
+                self.arms_payoff_vectors["cumulated_rewards"][arm_pos] += reward
+            self.arms_payoff_vectors["tries"][arm_pos] += 1
+            self.price += self.arms_payoff_vectors["cost"][arm_pos]
+
+
                   
         
         # -------------------------------------------------------------------
